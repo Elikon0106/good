@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Панель управления — Digital Bridge{% endblock %}
+
+{% block main_class %}min-h-[calc(100vh-57px)]{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 py-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-white" data-i18n="Панель администратора">Панель администратора</h1>
+            <p class="text-gray-400 mt-1" data-i18n="Управление рассадкой гостей">Управление рассадкой гостей</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="bg-hall-card border border-gray-700 rounded-lg px-4 py-2 text-sm">
+                <span class="text-gray-400" data-i18n="Занято:">Занято:</span>
+                <span id="admin-occupied" class="text-hall-accent font-semibold">{{ occupied_seats }}</span>
+                <span class="text-gray-400">/ {{ total_seats }}</span>
+            </div>
+            <a href="/admin/logout"
+               class="text-gray-400 hover:text-red-400 transition-colors text-sm px-3 py-2 rounded-lg hover:bg-red-900/20"
+               data-i18n="Выйти">
+                Выйти
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left column: Upload & Controls -->
+        <div class="space-y-6">
+            <!-- Upload CSV -->
+            <div class="bg-hall-card rounded-xl border border-gray-700 p-5">
+                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <span data-i18n="Точная рассадка (CSV)">Точная рассадка (CSV)</span>
+                </h2>
+
+                <form id="upload-form" enctype="multipart/form-data">
+                    <div class="upload-zone rounded-xl p-6 text-center cursor-pointer" id="drop-zone"
+                         onclick="document.getElementById('file-input').click()">
+                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <p class="text-gray-400 text-sm mb-1" data-i18n="Перетащите CSV файл сюда">Перетащите CSV файл сюда</p>
+                        <p class="text-gray-500 text-xs" data-i18n="или нажмите для выбора (.csv)">или нажмите для выбора (.csv)</p>
+                        <p id="file-name" class="text-hall-accent text-sm mt-2 hidden"></p>
+                    </div>
+                    <input type="file" id="file-input" accept=".csv" class="hidden">
+
+                    <button type="submit" id="upload-btn" disabled
+                            class="w-full mt-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                            data-i18n="Загрузить">
+                        Загрузить
+                    </button>
+                </form>
+
+                <div id="upload-result" class="mt-4 hidden"></div>
+            </div>
+
+            <!-- Actions -->
+            <div class="bg-hall-card rounded-xl border border-gray-700 p-5">
+                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                    </svg>
+                    <span data-i18n="Действия">Действия</span>
+                </h2>
+
+                <!-- Assign guest manually -->
+                <div class="mb-4">
+                    <h3 class="text-sm font-medium text-gray-300 mb-2" data-i18n="Посадить гостя">Посадить гостя</h3>
+                    <div class="space-y-2">
+                        <select id="assign-target" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-hall-accent">
+                            <option value="" data-i18n="Выберите место">Выберите место</option>
+                        </select>
+                        <input type="text" id="assign-name" placeholder="ФИО или Название" data-i18n-placeholder="ФИО или Название"
+                               class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-hall-accent">
+                        <input type="text" id="assign-category" placeholder="Категория (необязательно)" data-i18n-placeholder="Категория (необязательно)"
+                               class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-hall-accent">
+                        <button onclick="assignGuest()" id="assign-btn"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                                data-i18n="Посадить">
+                            Посадить
+                        </button>
+                    </div>
+                </div>
+
+                <hr class="border-gray-700 my-4">
+
+                <!-- Move guest -->
+                <div class="mb-4">
+                    <h3 class="text-sm font-medium text-gray-300 mb-2" data-i18n="Переместить гостя">Переместить гостя</h3>
+                    <div class="space-y-2">
+                        <select id="move-source" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-hall-accent">
+                            <option value="" data-i18n="Откуда (выберите гостя)">Откуда (выберите гостя)</option>
+                        </select>
+                        <select id="move-target" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-hall-accent">
+                            <option value="" data-i18n="Куда (выберите место)">Куда (выберите место)</option>
+                        </select>
+                        <button onclick="moveGuest()" id="move-btn"
+                                class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                                data-i18n="Переместить">
+                            Переместить
+                        </button>
+                    </div>
+                </div>
+
+                <hr class="border-gray-700 my-4">
+
+                <!-- Clear all -->
+                <button onclick="clearAll()"
+                        class="w-full bg-red-900/50 hover:bg-red-900 text-red-300 hover:text-red-200 font-medium py-2 px-4 rounded-lg transition-colors text-sm border border-red-800"
+                        data-i18n="🗑 Очистить все назначения">
+                    🗑 Очистить все назначения
+                </button>
+            </div>
+        </div>
+
+        <!-- Right column: Hall + Guest list -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Mini hall -->
+            <div class="bg-hall-card rounded-xl border border-gray-700 p-5">
+                <h2 class="text-lg font-semibold text-white mb-4" data-i18n="Схема зала">Схема зала</h2>
+                <div class="hall-container flex justify-center overflow-auto">
+                    <svg id="admin-hall-svg" viewBox="0 0 1280 1280" class="w-full max-w-3xl" xmlns="http://www.w3.org/2000/svg">
+                    </svg>
+                </div>
+                <div class="flex items-center justify-center gap-4 mt-3 text-sm">
+                    <span class="legend-item"><span class="legend-dot" style="background:#22c55e"></span> <span data-i18n="Свободно">Свободно</span></span>
+                    <span class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> <span data-i18n="Занято">Занято</span></span>
+                </div>
+            </div>
+
+            <!-- Guest list table -->
+            <div class="bg-hall-card rounded-xl border border-gray-700 p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-white" data-i18n="Назначенные гости">Назначенные гости</h2>
+                    <input type="text" id="guest-search" placeholder="Поиск по ФИО..." data-i18n-placeholder="Поиск по ФИО..."
+                           class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-hall-accent w-64">
+                </div>
+                <div class="overflow-y-auto max-h-96 rounded-lg border border-gray-700">
+                    <table class="guest-table text-sm">
+                        <thead>
+                            <tr class="text-left text-gray-400 border-b border-gray-700">
+                                <th class="px-4 py-3 font-medium" data-i18n="ФИО">ФИО</th>
+                                <th class="px-4 py-3 font-medium" data-i18n="Сектор">Сектор</th>
+                                <th class="px-4 py-3 font-medium" data-i18n="Ряд">Ряд</th>
+                                <th class="px-4 py-3 font-medium" data-i18n="Место">Место</th>
+                                <th class="px-4 py-3 font-medium" data-i18n="Действия">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="guest-table-body">
+                            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500" data-i18n="Нет назначенных гостей">Нет назначенных гостей</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin.js"></script>
+{% endblock %}
